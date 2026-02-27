@@ -1,69 +1,73 @@
-import 'contractor_model.dart';
 import 'status_enum.dart';
 
 class DefectModel {
   final String id;
-  final String location;
-  final DateTime createdDate;
-  TicketStatus status;
-  final String priority;
+  final String title;
   final String description;
-  final String inspectorName;
   final String beforePhotoUrl;
+  final String? afterPhotoUrl;
+  String? contractorName;
+  TicketStatus status;
   final double latitude;
   final double longitude;
+  final DateTime createdDate;
 
-  ContractorModel? contractor;
-  String? afterPhotoUrl;
+  // Additional fields for local UI representation
+  final String location;
+  final String priority;
+  bool isNewlyAdded;
 
   DefectModel({
     required this.id,
-    required this.location,
-    required this.createdDate,
-    required this.status,
-    required this.priority,
+    required this.title,
     required this.description,
-    required this.inspectorName,
     required this.beforePhotoUrl,
+    this.afterPhotoUrl,
+    this.contractorName,
+    required this.status,
     required this.latitude,
     required this.longitude,
-    this.contractor,
-    this.afterPhotoUrl,
+    required this.createdDate,
+    this.location = 'Unknown Location',
+    this.priority = 'Normal',
+    this.isNewlyAdded = false,
   });
 
   factory DefectModel.fromJson(Map<String, dynamic> json) {
     return DefectModel(
-      id: json['id'],
-      location: json['location'],
-      createdDate: DateTime.parse(json['createdDate']),
-      status: TicketStatusExtension.fromString(json['status']),
-      priority: json['priority'],
-      description: json['description'],
-      inspectorName: json['inspectorName'],
-      beforePhotoUrl: json['beforePhotoUrl'],
-      latitude: json['latitude']?.toDouble() ?? 0.0,
-      longitude: json['longitude']?.toDouble() ?? 0.0,
-      contractor: json['contractor'] != null
-          ? ContractorModel.fromJson(json['contractor'])
-          : null,
-      afterPhotoUrl: json['afterPhotoUrl'],
+      id: json['_id'] ?? json['id'] ?? '',
+      title: json['title'] ?? 'Defect Ticket',
+      description: json['description'] ?? '',
+      beforePhotoUrl: json['beforePhoto'] ?? json['beforePhotoUrl'] ?? '',
+      afterPhotoUrl: json['afterPhoto'] ?? json['afterPhotoUrl'],
+      contractorName: json['contractorName'],
+      status: TicketStatusExtension.fromString(json['status'] ?? 'NEW'),
+      latitude: json['gps']?['latitude']?.toDouble() ??
+          json['latitude']?.toDouble() ??
+          0.0,
+      longitude: json['gps']?['longitude']?.toDouble() ??
+          json['longitude']?.toDouble() ??
+          0.0,
+      createdDate: json['createdAt'] != null || json['createdDate'] != null
+          ? DateTime.parse(json['createdAt'] ?? json['createdDate'])
+          : DateTime.now(),
+      location: json['location'] ?? 'Unknown Location',
+      priority: json['priority'] ?? 'Normal',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'location': location,
-      'createdDate': createdDate.toIso8601String(),
-      'status': status.name,
-      'priority': priority,
+      'title': title,
       'description': description,
-      'inspectorName': inspectorName,
-      'beforePhotoUrl': beforePhotoUrl,
-      'latitude': latitude,
-      'longitude': longitude,
-      'contractor': contractor?.toJson(),
-      'afterPhotoUrl': afterPhotoUrl,
+      'beforePhoto': beforePhotoUrl,
+      'afterPhoto': afterPhotoUrl,
+      'contractorName': contractorName,
+      'status': status.name,
+      'gps': {
+        'latitude': latitude,
+        'longitude': longitude,
+      }
     };
   }
 }

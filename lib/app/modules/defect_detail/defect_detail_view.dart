@@ -136,11 +136,11 @@ class DefectDetailView extends GetView<DefectDetailController> {
             _buildInfoRow(Icons.calendar_today, 'Reported On',
                 DateFormat('MMM dd, yyyy - HH:mm').format(defect.createdDate)),
             const Divider(),
-            _buildInfoRow(Icons.person, 'Inspector', defect.inspectorName),
-            if (defect.contractor != null) ...[
+            _buildInfoRow(Icons.title, 'Title', defect.title),
+            if (defect.contractorName != null) ...[
               const Divider(),
               _buildInfoRow(Icons.engineering, 'Assigned Contractor',
-                  '${defect.contractor!.name} (${defect.contractor!.phone})'),
+                  defect.contractorName!),
             ],
           ],
         ),
@@ -231,7 +231,7 @@ class DefectDetailView extends GetView<DefectDetailController> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Final Approval',
+          Text('Verify Repair',
               style: Theme.of(context)
                   .textTheme
                   .titleMedium
@@ -245,7 +245,7 @@ class DefectDetailView extends GetView<DefectDetailController> {
                       ? null
                       : controller.rejectRepair,
                   icon: const Icon(Icons.close),
-                  label: const Text('Reject (Rework)'),
+                  label: const Text('Rework'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red,
                     side: const BorderSide(color: Colors.red),
@@ -258,16 +258,39 @@ class DefectDetailView extends GetView<DefectDetailController> {
                 child: FilledButton.icon(
                   onPressed: controller.isActionLoading.value
                       ? null
-                      : controller.approveRepair,
-                  icon: const Icon(Icons.check),
-                  label: const Text('Approve (Close)'),
+                      : controller.verifyRepair,
+                  icon: const Icon(Icons.verified),
+                  label: const Text('Verify'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Colors.teal,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
             ],
+          ),
+        ],
+      );
+    } else if (defect.status == TicketStatus.verified) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Final Approval',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: controller.isActionLoading.value
+                ? null
+                : controller.closeTicket,
+            icon: const Icon(Icons.check_circle),
+            label: const Text('Close Ticket'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
           ),
         ],
       );
@@ -279,13 +302,16 @@ class DefectDetailView extends GetView<DefectDetailController> {
     Color color;
     switch (status) {
       case TicketStatus.newTicket:
-        color = Colors.orange;
-        break;
-      case TicketStatus.assigned:
         color = Colors.blue;
         break;
-      case TicketStatus.repaired:
+      case TicketStatus.assigned:
         color = Colors.purple;
+        break;
+      case TicketStatus.repaired:
+        color = Colors.orange;
+        break;
+      case TicketStatus.verified:
+        color = Colors.teal;
         break;
       case TicketStatus.rework:
         color = Colors.red;

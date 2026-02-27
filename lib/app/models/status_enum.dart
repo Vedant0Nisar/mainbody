@@ -2,6 +2,7 @@ enum TicketStatus {
   newTicket,
   assigned,
   repaired,
+  verified,
   rework,
   closed,
 }
@@ -15,6 +16,8 @@ extension TicketStatusExtension on TicketStatus {
         return 'ASSIGNED';
       case TicketStatus.repaired:
         return 'REPAIRED';
+      case TicketStatus.verified:
+        return 'VERIFIED';
       case TicketStatus.rework:
         return 'REWORK';
       case TicketStatus.closed:
@@ -30,6 +33,8 @@ extension TicketStatusExtension on TicketStatus {
         return TicketStatus.assigned;
       case 'REPAIRED':
         return TicketStatus.repaired;
+      case 'VERIFIED':
+        return TicketStatus.verified;
       case 'REWORK':
         return TicketStatus.rework;
       case 'CLOSED':

@@ -10,6 +10,11 @@ import '../modules/defect_list/defect_list_binding.dart';
 import '../modules/defect_list/defect_list_view.dart';
 import '../modules/defect_detail/defect_detail_binding.dart';
 import '../modules/defect_detail/defect_detail_view.dart';
+import '../modules/create_ticket/create_ticket_binding.dart';
+import '../modules/create_ticket/create_ticket_view.dart';
+import '../modules/profile/profile_view.dart';
+import '../modules/settings/settings_view.dart';
+import '../modules/help/help_view.dart';
 
 class AppPages {
   static final pages = [
@@ -32,6 +37,26 @@ class AppPages {
       name: Routes.DEFECT_DETAIL,
       page: () => const DefectDetailView(),
       binding: DefectDetailBinding(),
+    ),
+    GetPage(
+      name: Routes.CREATE_TICKET,
+      page: () => const CreateTicketView(),
+      binding: CreateTicketBinding(),
+    ),
+    GetPage(
+      name: Routes.PROFILE,
+      page: () => const ProfileView(),
+      transition: Transition.noTransition,
+    ),
+    GetPage(
+      name: Routes.SETTINGS,
+      page: () => const SettingsView(),
+      transition: Transition.noTransition,
+    ),
+    GetPage(
+      name: Routes.HELP,
+      page: () => const HelpView(),
+      transition: Transition.noTransition,
     ),
   ];
 }

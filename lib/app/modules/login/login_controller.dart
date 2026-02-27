@@ -16,7 +16,7 @@ class LoginController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _checkLoginStatus();
+    // _checkLoginStatus(); // Commented out to ensure Login is always shown during testing
   }
 
   void _checkLoginStatus() async {

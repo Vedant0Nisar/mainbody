@@ -161,13 +161,16 @@ class DefectListView extends GetView<DefectListController> {
     Color color;
     switch (status) {
       case TicketStatus.newTicket:
-        color = Colors.orange;
-        break;
-      case TicketStatus.assigned:
         color = Colors.blue;
         break;
-      case TicketStatus.repaired:
+      case TicketStatus.assigned:
         color = Colors.purple;
+        break;
+      case TicketStatus.repaired:
+        color = Colors.orange;
+        break;
+      case TicketStatus.verified:
+        color = Colors.teal;
         break;
       case TicketStatus.rework:
         color = Colors.red;

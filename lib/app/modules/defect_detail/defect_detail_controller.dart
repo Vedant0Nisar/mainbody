@@ -64,7 +64,7 @@ class DefectDetailController extends GetxController {
         defect.update((val) {
           if (val != null) {
             val.status = TicketStatus.assigned;
-            val.contractor = selectedContractor.value;
+            val.contractorName = selectedContractor.value!.name;
           }
         });
         Get.snackbar('Success', 'Contractor assigned successfully');
@@ -76,20 +76,39 @@ class DefectDetailController extends GetxController {
     }
   }
 
-  void approveRepair() async {
+  void verifyRepair() async {
     isActionLoading.value = true;
     try {
-      final success = await _defectRepository.approveRepair(defect.value.id);
+      final success = await _defectRepository.verifyRepair(defect.value.id);
+      if (success) {
+        defect.update((val) {
+          if (val != null) {
+            val.status = TicketStatus.verified;
+          }
+        });
+        Get.snackbar('Success', 'Repair verified successfully');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to verify repair');
+    } finally {
+      isActionLoading.value = false;
+    }
+  }
+
+  void closeTicket() async {
+    isActionLoading.value = true;
+    try {
+      final success = await _defectRepository.closeTicket(defect.value.id);
       if (success) {
         defect.update((val) {
           if (val != null) {
             val.status = TicketStatus.closed;
           }
         });
-        Get.snackbar('Success', 'Repair approved successfully');
+        Get.snackbar('Success', 'Ticket closed successfully');
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to approve repair');
+      Get.snackbar('Error', 'Failed to close ticket');
     } finally {
       isActionLoading.value = false;
     }
