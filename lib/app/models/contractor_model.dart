@@ -1,19 +1,19 @@
 class ContractorModel {
   final String id;
   final String name;
-  final String phone;
+  final String? email;
 
   ContractorModel({
     required this.id,
     required this.name,
-    required this.phone,
+    this.email,
   });
 
   factory ContractorModel.fromJson(Map<String, dynamic> json) {
     return ContractorModel(
-      id: json['id'],
-      name: json['name'],
-      phone: json['phone'],
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? 'Unknown',
+      email: json['email'],
     );
   }
 
@@ -21,7 +21,7 @@ class ContractorModel {
     return {
       'id': id,
       'name': name,
-      'phone': phone,
+      'email': email,
     };
   }
 }

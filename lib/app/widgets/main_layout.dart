@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/layout_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../routes/app_routes.dart';
@@ -8,9 +7,14 @@ import '../routes/app_routes.dart';
 class MainLayout extends StatelessWidget {
   final String title;
   final Widget body;
+  final List<Widget>? actions;
 
-  MainLayout({Key? key, required this.title, required this.body})
-      : super(key: key) {
+  MainLayout({
+    Key? key,
+    required this.title,
+    required this.body,
+    this.actions,
+  }) : super(key: key) {
     if (!Get.isRegistered<LayoutController>()) {
       Get.put(LayoutController());
     }
@@ -67,6 +71,7 @@ class MainLayout extends StatelessWidget {
             )
           : null, // Scaffold handles hamburger
       actions: [
+        if (actions != null) ...actions!,
         _buildNotificationBell(context),
         const SizedBox(width: 16),
       ],
@@ -209,9 +214,6 @@ class MainLayout extends StatelessWidget {
               isExpanded,
             )),
         _buildActionItem(context, Icons.logout, 'Logout', () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('isLoggedIn');
-          await prefs.remove('role');
           Get.offAllNamed(Routes.LOGIN);
         }, isExpanded),
         const SizedBox(height: 16),

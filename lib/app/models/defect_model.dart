@@ -15,6 +15,7 @@ class DefectModel {
   // Additional fields for local UI representation
   final String location;
   final String priority;
+  final String inspectorName;
   bool isNewlyAdded;
 
   DefectModel({
@@ -30,29 +31,39 @@ class DefectModel {
     required this.createdDate,
     this.location = 'Unknown Location',
     this.priority = 'Normal',
+    this.inspectorName = 'Unknown Inspector',
     this.isNewlyAdded = false,
   });
 
   factory DefectModel.fromJson(Map<String, dynamic> json) {
     return DefectModel(
-      id: json['_id'] ?? json['id'] ?? '',
-      title: json['title'] ?? 'Defect Ticket',
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      title: json['defect_type'] ?? json['title'] ?? 'Defect Ticket',
       description: json['description'] ?? '',
-      beforePhotoUrl: json['beforePhoto'] ?? json['beforePhotoUrl'] ?? '',
-      afterPhotoUrl: json['afterPhoto'] ?? json['afterPhotoUrl'],
-      contractorName: json['contractorName'],
+      beforePhotoUrl: json['before_image'] ??
+          json['beforePhotoUrl'] ??
+          json['beforePhoto'] ??
+          '',
+      afterPhotoUrl:
+          json['after_image'] ?? json['afterPhotoUrl'] ?? json['afterPhoto'],
+      contractorName: json['contractor'],
       status: TicketStatusExtension.fromString(json['status'] ?? 'NEW'),
-      latitude: json['gps']?['latitude']?.toDouble() ??
-          json['latitude']?.toDouble() ??
+      latitude: json['latitude']?.toDouble() ??
+          json['gps']?['latitude']?.toDouble() ??
           0.0,
-      longitude: json['gps']?['longitude']?.toDouble() ??
-          json['longitude']?.toDouble() ??
+      longitude: json['longitude']?.toDouble() ??
+          json['gps']?['longitude']?.toDouble() ??
           0.0,
-      createdDate: json['createdAt'] != null || json['createdDate'] != null
-          ? DateTime.parse(json['createdAt'] ?? json['createdDate'])
+      createdDate: json['created_at'] != null || json['createdAt'] != null
+          ? DateTime.tryParse(json['created_at'] ?? json['createdAt']) ??
+              DateTime.now()
           : DateTime.now(),
       location: json['location'] ?? 'Unknown Location',
-      priority: json['priority'] ?? 'Normal',
+      priority: json['severity'] ?? json['priority'] ?? 'Normal',
+      inspectorName: json['createdBy'] ??
+          json['inspector_name'] ??
+          json['inspectorName'] ??
+          'Unknown Inspector',
     );
   }
 

@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../data/repositories/defect_repository.dart';
+import '../../data/repositories/main_body_repository.dart';
 import '../../models/defect_model.dart';
-import '../../models/contractor_model.dart';
-import '../../models/status_enum.dart';
 
 class DefectDetailController extends GetxController {
-  final DefectRepository _defectRepository;
-
-  DefectDetailController(this._defectRepository);
+  final MainBodyRepository _apiRepository = MainBodyRepository();
 
   late Rx<DefectModel> defect;
   final RxBool rxIsInit = false.obs;
-
-  final RxList<ContractorModel> contractors = <ContractorModel>[].obs;
-  final Rx<ContractorModel?> selectedContractor = Rx<ContractorModel?>(null);
 
   final RxBool isLoading = false.obs;
   final RxBool isActionLoading = false.obs;
@@ -25,112 +18,25 @@ class DefectDetailController extends GetxController {
     if (Get.arguments != null && Get.arguments is DefectModel) {
       defect = Rx<DefectModel>(Get.arguments as DefectModel);
       rxIsInit.value = true;
-      if (defect.value.status == TicketStatus.newTicket ||
-          defect.value.status == TicketStatus.rework) {
-        loadContractors();
-      }
+      _loadFullDetails();
     } else {
       Get.back();
-      // Wait for layout to finish before showing snackbar
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Get.snackbar('Error', 'Defect details not found');
+        Get.snackbar('Error', 'Defect details not found',
+            snackPosition: SnackPosition.TOP);
       });
     }
   }
 
-  Future<void> loadContractors() async {
+  Future<void> _loadFullDetails() async {
     isLoading.value = true;
     try {
-      final list = await _defectRepository.fetchContractors();
-      contractors.assignAll(list);
+      final data = await _apiRepository.getTicketDetails(defect.value.id);
+      defect.value = DefectModel.fromJson(data);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load contractors');
+      // It's okay if it fails, we keep the basic model
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  void assignContractor() async {
-    if (selectedContractor.value == null) {
-      Get.snackbar('Warning', 'Please select a contractor first');
-      return;
-    }
-
-    isActionLoading.value = true;
-    try {
-      final success = await _defectRepository.assignContractor(
-          defect.value.id, selectedContractor.value!);
-      if (success) {
-        defect.update((val) {
-          if (val != null) {
-            val.status = TicketStatus.assigned;
-            val.contractorName = selectedContractor.value!.name;
-          }
-        });
-        Get.snackbar('Success', 'Contractor assigned successfully');
-      }
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to assign contractor');
-    } finally {
-      isActionLoading.value = false;
-    }
-  }
-
-  void verifyRepair() async {
-    isActionLoading.value = true;
-    try {
-      final success = await _defectRepository.verifyRepair(defect.value.id);
-      if (success) {
-        defect.update((val) {
-          if (val != null) {
-            val.status = TicketStatus.verified;
-          }
-        });
-        Get.snackbar('Success', 'Repair verified successfully');
-      }
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to verify repair');
-    } finally {
-      isActionLoading.value = false;
-    }
-  }
-
-  void closeTicket() async {
-    isActionLoading.value = true;
-    try {
-      final success = await _defectRepository.closeTicket(defect.value.id);
-      if (success) {
-        defect.update((val) {
-          if (val != null) {
-            val.status = TicketStatus.closed;
-          }
-        });
-        Get.snackbar('Success', 'Ticket closed successfully');
-      }
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to close ticket');
-    } finally {
-      isActionLoading.value = false;
-    }
-  }
-
-  void rejectRepair() async {
-    isActionLoading.value = true;
-    try {
-      final success = await _defectRepository.rejectRepair(defect.value.id);
-      if (success) {
-        defect.update((val) {
-          if (val != null) {
-            val.status = TicketStatus.rework;
-          }
-        });
-        loadContractors(); // Allow re-assigning if needed
-        Get.snackbar('Success', 'Repair rejected. Status set to REWORK.');
-      }
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to reject repair');
-    } finally {
-      isActionLoading.value = false;
     }
   }
 }

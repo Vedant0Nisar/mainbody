@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get_storage/get_storage.dart';
 
 class ThemeController extends GetxController {
   final _isDarkMode = false.obs;
+  final _box = GetStorage();
 
   bool get isDarkMode => _isDarkMode.value;
 
@@ -13,17 +14,14 @@ class ThemeController extends GetxController {
     _loadTheme();
   }
 
-  Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    _isDarkMode.value = prefs.getBool('isDarkMode') ?? false;
+  void _loadTheme() {
+    _isDarkMode.value = _box.read('isDarkMode') ?? false;
     Get.changeThemeMode(_isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
   }
 
-  void toggleTheme() async {
+  void toggleTheme() {
     _isDarkMode.value = !isDarkMode;
     Get.changeThemeMode(_isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', _isDarkMode.value);
+    _box.write('isDarkMode', _isDarkMode.value);
   }
 }

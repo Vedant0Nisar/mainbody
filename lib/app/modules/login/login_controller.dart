@@ -29,7 +29,7 @@ class LoginController extends GetxController {
   void login() async {
     if (usernameController.text.isEmpty || passwordController.text.isEmpty) {
       Get.snackbar('Error', 'Please enter username and password',
-          snackPosition: SnackPosition.BOTTOM);
+          snackPosition: SnackPosition.TOP);
       return;
     }
 
@@ -41,11 +41,31 @@ class LoginController extends GetxController {
       );
 
       if (success) {
+        Get.snackbar(
+          'Success',
+          'Login successful!',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green.withOpacity(0.1),
+          colorText: Colors.green,
+        );
         Get.offAllNamed(Routes.DASHBOARD);
       } else {
-        Get.snackbar('Error', 'Invalid credentials',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar(
+          'Error',
+          'Invalid credentials',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red.withOpacity(0.1),
+          colorText: Colors.red,
+        );
       }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red,
+      );
     } finally {
       isLoading.value = false;
     }

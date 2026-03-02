@@ -5,7 +5,11 @@ import 'app/routes/app_routes.dart';
 
 import 'app/controllers/theme_controller.dart';
 
-void main() {
+import 'package:get_storage/get_storage.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
   Get.put(ThemeController());
   runApp(const MyApp());
 }
@@ -62,3 +66,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

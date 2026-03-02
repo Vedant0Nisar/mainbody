@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'defect_list_controller.dart';
 import '../../models/status_enum.dart';
 import 'package:intl/intl.dart';
+import '../../models/contractor_model.dart';
+import '../../widgets/ticket_search_delegate.dart';
+import '../../widgets/assign_dialog.dart';
 
 class DefectListView extends GetView<DefectListController> {
   const DefectListView({Key? key}) : super(key: key);
@@ -12,43 +15,35 @@ class DefectListView extends GetView<DefectListController> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Defects'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: TicketSearchDelegate(),
+              );
+            },
+          ),
+        ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(130),
+          preferredSize: const Size.fromHeight(60),
           child: Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: controller.searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search by Ticket ID...',
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 40,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _buildFilterChip(null, 'All'),
-                      _buildFilterChip(TicketStatus.newTicket, 'New'),
-                      _buildFilterChip(TicketStatus.assigned, 'Assigned'),
-                      _buildFilterChip(TicketStatus.repaired, 'Repaired'),
-                      _buildFilterChip(TicketStatus.rework, 'Rework'),
-                      _buildFilterChip(TicketStatus.closed, 'Closed'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
+            child: SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _buildFilterChip(null, 'All'),
+                  _buildFilterChip(TicketStatus.newTicket, 'New'),
+                  _buildFilterChip(TicketStatus.assigned, 'Assigned'),
+                  _buildFilterChip(TicketStatus.repaired, 'Repaired'),
+                  _buildFilterChip(TicketStatus.rework, 'Rework'),
+                  _buildFilterChip(TicketStatus.closed, 'Closed'),
+                ],
+              ),
             ),
           ),
         ),
@@ -129,6 +124,21 @@ class DefectListView extends GetView<DefectListController> {
                               fontSize: 12,
                             )),
                       ),
+                      if (defect.status == TicketStatus.newTicket ||
+                          defect.status == TicketStatus.rework) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: () => _showAssignDialog(context, defect),
+                            icon: const Icon(Icons.assignment_ind, size: 18),
+                            label: const Text('Assign Ticket'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   onTap: () => controller.navigateToDetail(defect),
@@ -139,6 +149,42 @@ class DefectListView extends GetView<DefectListController> {
         );
       }),
     );
+  }
+
+  void _showAssignDialog(BuildContext context, defect) async {
+    // We need to fetch contractors before showing.
+    // Usually handled by the controller.
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    try {
+      // Let's call a method in the controller to get contractors if needed,
+      // or implement simpler repository call here strictly for UI convenience
+      // Since controller holds _apiRepository indirectly, let's just make it do it.
+      final contractors = await controller.getContractors();
+      Get.back(); // close loader
+
+      final result = await showModalBottomSheet<ContractorModel>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => AssignDialog(
+          ticket: defect,
+          contractors: contractors,
+        ),
+      );
+
+      if (result != null) {
+        // user selected a contractor and confirmed
+        controller.assignContractor(defect.id, result.name);
+      }
+    } catch (e) {
+      Get.back();
+      Get.snackbar('Error', 'Failed to prepare assignment',
+          snackPosition: SnackPosition.TOP);
+    }
   }
 
   Widget _buildFilterChip(TicketStatus? status, String label) {

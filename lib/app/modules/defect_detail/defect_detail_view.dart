@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'defect_detail_controller.dart';
 import '../../models/status_enum.dart';
-import '../../models/contractor_model.dart';
 
 class DefectDetailView extends GetView<DefectDetailController> {
   const DefectDetailView({Key? key}) : super(key: key);
@@ -30,7 +29,6 @@ class DefectDetailView extends GetView<DefectDetailController> {
               const SizedBox(height: 16),
               _buildInfoSection(context, defect),
               const SizedBox(height: 24),
-              _buildActionSection(context, defect),
             ],
           ),
         );
@@ -142,6 +140,8 @@ class DefectDetailView extends GetView<DefectDetailController> {
               _buildInfoRow(Icons.engineering, 'Assigned Contractor',
                   defect.contractorName!),
             ],
+            const Divider(),
+            _buildInfoRow(Icons.person, 'Inspector', defect.inspectorName),
           ],
         ),
       ),
@@ -180,122 +180,6 @@ class DefectDetailView extends GetView<DefectDetailController> {
         ],
       ),
     );
-  }
-
-  Widget _buildActionSection(BuildContext context, defect) {
-    if (defect.status == TicketStatus.newTicket ||
-        defect.status == TicketStatus.rework) {
-      if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Assign Contractor',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<ContractorModel>(
-            decoration: InputDecoration(
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              hintText: 'Select a contractor',
-            ),
-            value: controller.selectedContractor.value,
-            items: controller.contractors.map((c) {
-              return DropdownMenuItem(
-                value: c,
-                child: Text(c.name),
-              );
-            }).toList(),
-            onChanged: (val) {
-              controller.selectedContractor.value = val;
-            },
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: controller.isActionLoading.value
-                ? null
-                : controller.assignContractor,
-            icon: const Icon(Icons.assignment_ind),
-            label: const Text('Assign Ticket'),
-            style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16)),
-          ),
-        ],
-      );
-    } else if (defect.status == TicketStatus.repaired) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Verify Repair',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: controller.isActionLoading.value
-                      ? null
-                      : controller.rejectRepair,
-                  icon: const Icon(Icons.close),
-                  label: const Text('Rework'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: controller.isActionLoading.value
-                      ? null
-                      : controller.verifyRepair,
-                  icon: const Icon(Icons.verified),
-                  label: const Text('Verify'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    } else if (defect.status == TicketStatus.verified) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Final Approval',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: controller.isActionLoading.value
-                ? null
-                : controller.closeTicket,
-            icon: const Icon(Icons.check_circle),
-            label: const Text('Close Ticket'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.green,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
-        ],
-      );
-    }
-    return const SizedBox.shrink(); // No actions for ASSIGNED or CLOSED
   }
 
   Widget _buildStatusBadge(BuildContext context, TicketStatus status) {

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dashboard_controller.dart';
+import 'widgets/ticket_search_delegate.dart';
 import '../../models/status_enum.dart';
 import '../../models/defect_model.dart';
 import '../../widgets/main_layout.dart';
+import '../../models/contractor_model.dart';
+import '../../widgets/assign_dialog.dart';
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({Key? key}) : super(key: key);
@@ -12,6 +15,17 @@ class DashboardView extends GetView<DashboardController> {
   Widget build(BuildContext context) {
     return MainLayout(
       title: 'Dashboard',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: () {
+            showSearch(
+              context: context,
+              delegate: TicketSearchDelegate(controller.defects),
+            );
+          },
+        ),
+      ],
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -35,9 +49,10 @@ class DashboardView extends GetView<DashboardController> {
                       SizedBox(
                         width: cardWidth,
                         child: _buildSummaryCard(
-                          'Total Tickets',
+                          'Recent Tickets',
                           controller.defects.length.toString(),
                           Colors.blue[700]!,
+                          null,
                         ),
                       ),
                       SizedBox(
@@ -48,6 +63,7 @@ class DashboardView extends GetView<DashboardController> {
                               .getCount(TicketStatus.newTicket)
                               .toString(),
                           Colors.blue,
+                          TicketStatus.newTicket,
                         ),
                       ),
                       SizedBox(
@@ -56,6 +72,7 @@ class DashboardView extends GetView<DashboardController> {
                           'Assigned',
                           controller.getCount(TicketStatus.assigned).toString(),
                           Colors.purple,
+                          TicketStatus.assigned,
                         ),
                       ),
                       SizedBox(
@@ -64,6 +81,7 @@ class DashboardView extends GetView<DashboardController> {
                           'Repaired',
                           controller.getCount(TicketStatus.repaired).toString(),
                           Colors.orange,
+                          TicketStatus.repaired,
                         ),
                       ),
                       SizedBox(
@@ -72,6 +90,7 @@ class DashboardView extends GetView<DashboardController> {
                           'Rework',
                           controller.getCount(TicketStatus.rework).toString(),
                           Colors.red,
+                          TicketStatus.rework,
                         ),
                       ),
                       SizedBox(
@@ -80,6 +99,7 @@ class DashboardView extends GetView<DashboardController> {
                           'Closed',
                           controller.getCount(TicketStatus.closed).toString(),
                           Colors.green,
+                          TicketStatus.closed,
                         ),
                       ),
                     ],
@@ -94,7 +114,7 @@ class DashboardView extends GetView<DashboardController> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'All Records',
+                      'Recent Inspector Tickets',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -102,7 +122,7 @@ class DashboardView extends GetView<DashboardController> {
                       ),
                     ),
                     Text(
-                      '${controller.defects.length} records',
+                      '${controller.filteredRecentTickets.length} records',
                       style: TextStyle(
                         fontSize: 14,
                         color: Theme.of(context).textTheme.bodyMedium?.color,
@@ -115,13 +135,18 @@ class DashboardView extends GetView<DashboardController> {
 
               // List View
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  itemCount: controller.defects.length,
-                  itemBuilder: (context, index) {
-                    return _buildInspectionCard(
-                        context, controller.defects[index]);
-                  },
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: ListView.builder(
+                    key: ValueKey<String>(
+                        controller.selectedFilter.value?.name ?? 'all'),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    itemCount: controller.filteredRecentTickets.length,
+                    itemBuilder: (context, index) {
+                      return _buildInspectionCard(
+                          context, controller.filteredRecentTickets[index]);
+                    },
+                  ),
                 ),
               ),
             ],
@@ -131,142 +156,211 @@ class DashboardView extends GetView<DashboardController> {
     );
   }
 
-  Widget _buildSummaryCard(String title, String count, Color countColor) {
+  Widget _buildSummaryCard(
+      String title, String count, Color countColor, TicketStatus? status) {
     return Builder(builder: (context) {
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: countColor.withOpacity(0.4), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(
-              count,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: countColor,
+      final isSelected = controller.selectedFilter.value == status;
+      return InkWell(
+        onTap: () => controller.selectFilter(status),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? countColor.withOpacity(0.1)
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: isSelected ? countColor : countColor.withOpacity(0.4),
+                width: isSelected ? 2.5 : 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected
+                    ? countColor.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).textTheme.bodyMedium?.color,
-                fontWeight: FontWeight.w500,
+            ],
+          ),
+          child: Column(
+            children: [
+              Text(
+                count,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: countColor,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     });
   }
 
   Widget _buildInspectionCard(BuildContext context, DefectModel defect) {
-    final aiConfidence = 85.0; // placeholder
     return BlinkingBorderCard(
       isBlinking: defect.isNewlyAdded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. Defect Type & 6. Ticket Status
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image Placeholder
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: NetworkImage(defect.beforePhotoUrl),
-                    fit: BoxFit.cover,
+              Expanded(
+                child: Text(
+                  defect.title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
+              _buildStatusBadge(defect.status),
+            ],
+          ),
+          const SizedBox(height: 8),
 
-              // Details
+          // 2. Defect Description
+          Text(
+            defect.description.isNotEmpty
+                ? defect.description
+                : 'No description provided.',
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 3. Severity
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  size: 16, color: Colors.orange),
+              const SizedBox(width: 4),
+              Text(
+                'Severity: ${defect.priority}',
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // 4. Pin Point Exact Location
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.location_on,
+                    size: 20, color: Colors.redAccent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Lat: ${defect.latitude.toStringAsFixed(6)} | Lng: ${defect.longitude.toStringAsFixed(6)}',
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        defect.location,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 5. Uploaded Image
+          if (defect.beforePhotoUrl.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                defect.beforePhotoUrl,
+                width: double.infinity,
+                height: 150,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: double.infinity,
+                  height: 150,
+                  color: Colors.grey[200],
+                  child: const Center(
+                      child:
+                          Icon(Icons.image_not_supported, color: Colors.grey)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // 7. Assigned Contractor & 8. Created Date
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            defect.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  Theme.of(context).textTheme.bodyLarge?.color,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildStatusBadge(defect.status),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.memory,
-                            size: 14,
-                            color:
-                                Theme.of(context).textTheme.bodyMedium?.color),
-                        const SizedBox(width: 4),
-                        Text(
-                          'AI: ${aiConfidence.toStringAsFixed(1)}% confident',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.color),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.access_time,
-                            size: 14,
-                            color:
-                                Theme.of(context).textTheme.bodyMedium?.color),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${defect.createdDate.day}/${defect.createdDate.month}/${defect.createdDate.year}',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.color),
-                        ),
-                      ],
+                    const Icon(Icons.engineering,
+                        size: 16, color: Colors.blueGrey),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        defect.contractorName?.isNotEmpty == true
+                            ? defect.contractorName!
+                            : 'Unassigned',
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
               ),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today,
+                      size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${defect.createdDate.day}/${defect.createdDate.month}/${defect.createdDate.year}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 16),
 
+          const SizedBox(height: 16),
           // Action Buttons
           Row(
             children: [
@@ -290,9 +384,7 @@ class DashboardView extends GetView<DashboardController> {
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
-                  onPressed: () {
-                    Get.toNamed('/defect-detail', arguments: defect);
-                  },
+                  onPressed: () => _showAssignDialog(context, defect),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     backgroundColor: const Color(0xFF0D6EFD), // Bright Blue
@@ -300,7 +392,7 @@ class DashboardView extends GetView<DashboardController> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Update Status',
+                  child: const Text('Assign Ticket',
                       style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
@@ -395,6 +487,36 @@ class DashboardView extends GetView<DashboardController> {
         ),
       );
     });
+  }
+
+  void _showAssignDialog(BuildContext context, defect) async {
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    try {
+      final contractors = await controller.getContractors();
+      Get.back(); // close loader
+
+      final result = await showModalBottomSheet<ContractorModel>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => AssignDialog(
+          ticket: defect,
+          contractors: contractors,
+        ),
+      );
+
+      if (result != null) {
+        controller.assignContractor(defect.id, result.name);
+      }
+    } catch (e) {
+      Get.back();
+      Get.snackbar('Error', 'Failed to prepare assignment',
+          snackPosition: SnackPosition.TOP);
+    }
   }
 }
 

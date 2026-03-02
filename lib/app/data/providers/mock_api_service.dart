@@ -11,9 +11,9 @@ class MockApiService {
   Future<List<ContractorModel>> getContractors() async {
     await Future.delayed(const Duration(milliseconds: 500));
     return [
-      ContractorModel(id: 'c1', name: 'Acme Repairs', phone: '+1234567890'),
-      ContractorModel(id: 'c2', name: 'BuildIt Fast', phone: '+0987654321'),
-      ContractorModel(id: 'c3', name: 'Fixer Upper Co.', phone: '+1122334455'),
+      ContractorModel(id: 'c1', name: 'Acme Repairs', email: 'acme@test.com'),
+      ContractorModel(id: 'c2', name: 'BuildIt Fast', email: 'build@test.com'),
+      ContractorModel(id: 'c3', name: 'Fixer Upper Co.', email: 'fix@test.com'),
     ];
   }
 

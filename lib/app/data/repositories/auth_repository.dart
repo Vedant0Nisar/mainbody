@@ -1,29 +1,42 @@
-import '../providers/mock_api_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:get_storage/get_storage.dart';
+import '../../data/providers/api_client.dart';
 
 class AuthRepository {
-  final MockApiService _apiService;
-
-  AuthRepository(this._apiService);
+  final ApiClient _apiClient = ApiClient();
+  final _box = GetStorage();
 
   Future<bool> login(String username, String password) async {
-    final success = await _apiService.login(username, password);
-    if (success) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
-      await prefs.setString('role', 'admin');
+    try {
+      final response = await _apiClient.post(
+        '/auth/login',
+        body: {'email': username, 'password': password},
+        requiresAuth: false,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['access_token'] != null) {
+          _box.write('access_token', data['access_token']);
+          _box.write('role', data['role']);
+          return true;
+        }
+      } else {
+        throw Exception('Server returned status: ${response.statusCode}');
+      }
+      return false;
+    } catch (e) {
+      print('Login error: $e');
+      rethrow;
     }
-    return success;
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('isLoggedIn');
-    await prefs.remove('role');
+    _box.remove('access_token');
+    _box.remove('role');
   }
 
   Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('isLoggedIn') ?? false;
+    return _box.hasData('access_token');
   }
 }

@@ -21,7 +21,8 @@ class CreateTicketController extends GetxController {
   void pickPhoto() async {
     // Mocking photo picker
     photoPath.value = 'dummy/path/to/photo.jpg';
-    Get.snackbar('Photo', 'Photo attached successfully');
+    Get.snackbar('Photo', 'Photo attached successfully',
+        snackPosition: SnackPosition.TOP);
   }
 
   void getLocation() async {
@@ -29,12 +30,14 @@ class CreateTicketController extends GetxController {
     lat = 12.9716;
     lng = 77.5946;
     gpsLocation.value = 'Lat: $lat, Lng: $lng';
-    Get.snackbar('GPS', 'Location fetched successfully');
+    Get.snackbar('GPS', 'Location fetched successfully',
+        snackPosition: SnackPosition.TOP);
   }
 
   void submitTicket() async {
     if (titleController.text.isEmpty || descriptionController.text.isEmpty) {
-      Get.snackbar('Error', 'Please fill all fields');
+      Get.snackbar('Error', 'Please fill all fields',
+          snackPosition: SnackPosition.TOP);
       return;
     }
 
@@ -52,10 +55,13 @@ class CreateTicketController extends GetxController {
       if (success) {
         Get.back(result: true); // Return true so Dashboard can refresh
         Get.snackbar('Success', 'Ticket created successfully',
-            backgroundColor: Colors.green, colorText: Colors.white);
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.green,
+            colorText: Colors.white);
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to create ticket');
+      Get.snackbar('Error', 'Failed to create ticket',
+          snackPosition: SnackPosition.TOP);
     } finally {
       isLoading.value = false;
     }
